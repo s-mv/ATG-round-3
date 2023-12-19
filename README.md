@@ -24,15 +24,9 @@ python main.py
 ```
 Once the output is ready, it will be stored in `out/`.
 
-Bonus: Modularity.  
-If you have a valid link of listings, you may also link them.
-```
-python main.py -l <URL>
-```
-
 ## Methodology
 1. Analysis of required data.
 2. Building a basic pipeline for scraping.
-3. Testing if the current scraping pipeline works (see [scrape.ipynb](scrape.ipynb)).
-4. Application of the pipeline (see [scrape.py](scrape.py)).
+3. Testing if the current scraping pipeline works (see [test.ipynb](test.ipynb)).
+4. Application of the pipeline (see [scraper.py](scraper.py)).
 5. Deployment.

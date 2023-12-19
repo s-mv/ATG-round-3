@@ -1,7 +1,8 @@
 import csv
+from datetime import datetime
 import scraper
 
-links: [str] = []
+links = []
 
 with open("twitter_links.csv", newline="") as csvfile:
     reader = csv.reader(csvfile)
@@ -9,11 +10,17 @@ with open("twitter_links.csv", newline="") as csvfile:
     for row in reader:
         links.append(row[0])
 
-information = []
+users = scraper.scrape_twitter(links)
 
-for link in links:
-    info = scraper.scrape_twitter_link(link)
-    if info != None:
-        information.append(info)
+# convert the data to CSV
+output_path = f"./out/data-{datetime.now().strftime('%Y-%m-%d_%H.%M.%S')}.csv"
 
-print(information)
+# finally save the data
+with open(output_path, "w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Bio", "Following", "Followers", "Location", "Website"])
+
+    for user in users:
+        writer.writerow(
+            [user.bio, user.following, user.followers, user.location, user.website]
+        )

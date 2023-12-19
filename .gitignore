@@ -2,3 +2,5 @@ __pycache__
 venv
 
 test.html
+out/*
+!out
