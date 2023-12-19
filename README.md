@@ -24,6 +24,8 @@ python main.py
 ```
 Once the output is ready, it will be stored in `out/`.
 
+**Note:** You can also run the code step by stem in the python notebook at [steps.ipynb](steps.ipynb)
+
 ## Methodology
 1. Analysis of required data.
 2. Building a basic pipeline for scraping.

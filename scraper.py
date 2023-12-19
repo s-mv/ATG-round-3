@@ -21,13 +21,15 @@ driver: webdriver.Firefox
 
 
 class TwitterUser:
+    link: str  # for reference
     bio: str
     following: int
     followers: int
     location: str
     website: str
 
-    def __init__(self, bio, following, followers, location, website):
+    def __init__(self, link, bio, following, followers, location, website):
+        self.link = link
         self.bio = bio
         self.following = following
         self.followers = followers
@@ -66,7 +68,7 @@ def scrape_twitter(links: [str], log: bool = True) -> [TwitterUser]:
     logging.info("Extracting useful information.")
     # 4. Scrape needed information from data (threaded)
     for _ in range(4):
-        Thread(target=structure_twitter_data, args=(information, data)).start()
+        Thread(target=structure_twitter_data, args=(information, links, data)).start()
 
     # only continute once the threads are done
     while len(information) != 0:
@@ -82,6 +84,7 @@ def scrape_twitter(links: [str], log: bool = True) -> [TwitterUser]:
 def start_scraping_twitter():
     global driver
 
+    # firefox is probably the best familiar enough option out there
     options = webdriver.FirefoxOptions()
     options.add_argument("-headless")
     driver = webdriver.Firefox(options=options)
@@ -101,6 +104,7 @@ def scrape_raw_twitter_data(links: [str], information: deque):
             )
         except:
             logging.exception(f"Exception with link {link}")
+            links.remove(link)  # completely get rid of the link
             continue
 
         container = driver.find_element(
@@ -109,10 +113,11 @@ def scrape_raw_twitter_data(links: [str], information: deque):
         information.append(container)
 
 
-def structure_twitter_data(information: deque, data: [TwitterUser]):
+def structure_twitter_data(information: deque, links, data: [TwitterUser]):
     # this is why deques are superior to generic queues!
     while len(information) != 0:
         i = information.popleft()
+        link = links.pop(0)
 
         soup = BeautifulSoup(i, "html.parser")
         bio = soup.select_one(selectors["Bio"])
@@ -125,6 +130,7 @@ def structure_twitter_data(information: deque, data: [TwitterUser]):
         website = soup.select_one(selectors["Website"])
 
         user = TwitterUser(
+            link,
             bio.text if bio else None,
             following.text,
             followers.text,

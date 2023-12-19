@@ -18,9 +18,16 @@ output_path = f"./out/data-{datetime.now().strftime('%Y-%m-%d_%H.%M.%S')}.csv"
 # finally save the data
 with open(output_path, "w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["Bio", "Following", "Followers", "Location", "Website"])
+    writer.writerow(["Link", "Bio", "Following", "Followers", "Location", "Website"])
 
     for user in users:
         writer.writerow(
-            [user.bio, user.following, user.followers, user.location, user.website]
+            [
+                user.link,
+                user.bio,
+                user.following,
+                user.followers,
+                user.location,
+                user.website,
+            ]
         )
