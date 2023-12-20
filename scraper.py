@@ -5,9 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
 
-from collections import deque
 import logging
-from threading import Thread
+from multiprocessing import Process, Manager, Queue, Lock
 import re
 
 selectors = {
@@ -17,8 +16,6 @@ selectors = {
     "Location": "[data-testid='UserLocation']",
     "Website": "[data-testid='UserUrl']",
 }
-
-driver: webdriver.Firefox
 
 
 class TwitterUser:
@@ -38,63 +35,94 @@ class TwitterUser:
         self.website = website
 
 
-""" 
-Flow of operations:
-1. Initialise the webdriver             with `start_scraping_twitter`.
-2. Scrape raw data from the given links with `scrape_raw_twitter_data`
-4. Free driver
-3. Get needed information from data     with `structure_twitter_data`  (threaded)
-5. Stop
-"""
+def scrape_twitter(links: [str], log: bool = True, num_procs: int = 2) -> [TwitterUser]:
+    manager = Manager()
+    information_queues = [manager.Queue() for _ in range(num_procs)]
+    data_queue = manager.Queue()
+    links_q = manager.Queue()
 
-
-def scrape_twitter(links: [str], log: bool = True) -> [TwitterUser]:
-    information = deque()
-    data: [TwitterUser] = []
+    # populate the links queue
+    for link in links:
+        links_q.put(link)
+    # add in None for processes to terminate
+    for _ in range(num_procs):
+        links_q.put(None)
 
     saved_logging_level = logging.getLogger().getEffectiveLevel()
 
     if log:
         logging.getLogger().setLevel(logging.INFO)
 
-    # 1. Initialise the webdriver
-    logging.info("Initialising driver.")
-    start_scraping_twitter()
-    # 2. Scrape raw data from the given links
+    # Steps 1., 2., 3. on threads
     logging.info("Scraping data. This may take long.")
-    scrape_raw_twitter_data(links, information)
+
+    processes = []
+    locks = [manager.Lock() for _ in range(num_procs)]
+
+    # this is necessary for multithreading to be smooth
+    for i in range(num_procs):
+        proc = Process(
+            target=scrape_raw_twitter_data,
+            args=(links_q, information_queues[i], locks[i]),
+        )
+        proc.start()
+        processes.append(proc)
+    for proc in processes:
+        proc.join()
+        print(f"Process {proc.pid} finished.")
+
     logging.info("Scraping done. Quitting driver.")
-    # 3. Free driver
-    driver.quit()
+
+    # Step 4. on threads
     logging.info("Extracting useful information.")
-    # 4. Scrape needed information from data (threaded)
-    for _ in range(4):
-        Thread(target=structure_twitter_data, args=(information, links, data)).start()
+    processes = []
 
-    # only continute once the threads are done
-    while len(information) != 0:
-        pass
+    # adding None for multiprocessing
+    for _ in range(num_procs):
+        for q in information_queues:
+            q.put(None)
 
+    for i in range(num_procs):
+        proc = Process(
+            target=structure_twitter_data,
+            args=(information_queues[i], data_queue, locks[i]),
+        )
+        proc.start()
+        processes.append(proc)
+
+    for proc in processes:
+        proc.join()
+
+    # finally step 5. (all done)
     logging.info("All done.")
 
     logging.getLogger().setLevel(saved_logging_level)
 
-    return data
+    return_data = []
+    while not data_queue.empty():
+        return_data.append(data_queue.get())
+
+    print(links_q.qsize(), data_queue.qsize())
+
+    return return_data
 
 
-def start_scraping_twitter():
-    global driver
-
-    # firefox is probably the best familiar enough option out there
+def scrape_raw_twitter_data(links: Queue, information: Queue, lock: Lock):
+    # Step 1.
     options = webdriver.FirefoxOptions()
     options.add_argument("-headless")
     driver = webdriver.Firefox(options=options)
 
+    container = None
 
-def scrape_raw_twitter_data(links: [str], information: deque):
-    global driver
+    # Step 2.
+    while True:
+        with lock:
+            link = links.get()
+        if link is None:
+            break  # exit condition
 
-    for link in links:
+        logging.info(f"processing {link}")
         driver.get(link)
         # essential exception handling since we don't want to stop at any point
         try:
@@ -106,26 +134,36 @@ def scrape_raw_twitter_data(links: [str], information: deque):
                     (By.CSS_SELECTOR, selectors["FollowingFollowers"])
                 )
             )
+            container = driver.find_element(
+                By.CSS_SELECTOR, selectors["Container"]
+            ).get_attribute("innerHTML")
+            num_remaining = links.qsize()
         except:
-            logging.exception(f"Exception with link {link}")
-            links.remove(link)  # completely get rid of the link
+            # if it's a bad link
+            logging.warning(f"{link} failed.")
             continue
 
-        container = driver.find_element(
-            By.CSS_SELECTOR, selectors["Container"]
-        ).get_attribute("innerHTML")
-        information.append(container)
+        information.put(
+            {
+                "html": container,
+                "link": link,
+            }
+        )
+        logging.info(f"{link} successfully scraped.")
+
+    # Step 3.
+    driver.quit()
 
 
-def structure_twitter_data(information: deque, links, data: [TwitterUser]):
-    # this is why deques are superior to generic queues!
-    # they're also thread-safe (and this function is going to run on threads)
-    while len(information) != 0:
-        i = information.popleft()
-        link = links.pop(0)
+def structure_twitter_data(information: Queue, data: [TwitterUser], lock: Lock):
+    while True:
+        with lock:
+            info = information.get()
+        if info is None:
+            break  # this is the exit condition
 
         # bs4 handles from this point since we don't need resource heavy selenium anymore
-        soup = BeautifulSoup(i, "html.parser")
+        soup = BeautifulSoup(info["html"], "html.parser")
         bio = soup.select_one(selectors["Bio"])
 
         # since following and follower count both have the same CSS selector,
@@ -155,7 +193,7 @@ def structure_twitter_data(information: deque, links, data: [TwitterUser]):
         website = soup.select_one(selectors["Website"])
 
         user = TwitterUser(
-            link,
+            info["link"],
             bio.text if bio else None,
             following,
             followers,
@@ -163,4 +201,4 @@ def structure_twitter_data(information: deque, links, data: [TwitterUser]):
             website.text if website else None,
         )
 
-        data.append(user)
+        data.put(user)

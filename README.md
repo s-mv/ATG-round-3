@@ -24,12 +24,11 @@ python main.py
 ```
 Once the output is ready, it will be stored in `out/`.
 
-**Note:** You can also run the code step by stem in the python notebook at [steps.ipynb](steps.ipynb)
+**Note**: You can also run the code step by stem in the python notebook at [steps.ipynb](steps.ipynb)
 
 
-Bonus: Multithreading.  
-Data structuring runs on threads. However, the actual scraping process isn't threaded due to memory limitations on most devices.
-But this is proof of concept that my solution could be modified and scaled for a much bigger input file.
+**Bonus**: Multiprocessing.  
+Scraping runs on multiple processes. This creates a much more scalable result.
 
 ## Methodology
 1. Analysis of required data.
