@@ -98,6 +98,9 @@ def scrape_raw_twitter_data(links: [str], information: deque):
         driver.get(link)
         # essential exception handling since we don't want to stop at any point
         try:
+            # waiting for "FollowingFollowers" instead of "Container"
+            # this is because it's the last useful set of elements in the container
+            # Twitter isn't very kind to users that aren't logged in
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, selectors["FollowingFollowers"])
@@ -116,6 +119,7 @@ def scrape_raw_twitter_data(links: [str], information: deque):
 
 def structure_twitter_data(information: deque, links, data: [TwitterUser]):
     # this is why deques are superior to generic queues!
+    # they're also thread-safe (and this function is going to run on threads)
     while len(information) != 0:
         i = information.popleft()
         link = links.pop(0)
@@ -128,21 +132,23 @@ def structure_twitter_data(information: deque, links, data: [TwitterUser]):
         # we'll get an array with 2 elements in it
         following_followers = soup.select(selectors["FollowingFollowers"])
         # substitution of K, M, L (lakh), etc. is required here
-        for i in len(following_followers):
-            following_followers[i] = re.sub(
-                r"(k|l|m)$",
-                lambda m: {
-                    "k": "000",
-                    "l": "00000",
-                    "m": "000000",
-                }[m.group(1).lower()],
-                following_followers[i],
-                re.I,
-            )
-            following_followers[i] = float(following_followers[i])
+        for i in range(len(following_followers)):
+            value = following_followers[i].text.upper()  # for case insensitivity
+            # using regex to match the value and suffix
+            matching = re.compile(r"(\d+(\.\d+)?)\s*([KLM]?)").match(value)
+
+            if matching:
+                number, _, suffix = matching.groups()
+                multiplier = {
+                    "K": 10**3,  # thousand
+                    "L": 10**5,  # lakh
+                    "M": 10**6,  # million
+                }.get(suffix, 1)
+
+                following_followers[i] = int(float(number) * multiplier)
+            # if it doesn't match, we'll still extract the information as a string
 
         following = following_followers[0]
-
         followers = following_followers[1]
 
         location = soup.select_one(selectors["Location"])
@@ -151,8 +157,8 @@ def structure_twitter_data(information: deque, links, data: [TwitterUser]):
         user = TwitterUser(
             link,
             bio.text if bio else None,
-            following.text,
-            followers.text,
+            following,
+            followers,
             location.text if location else None,
             website.text if website else None,
         )

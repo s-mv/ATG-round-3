@@ -26,6 +26,11 @@ Once the output is ready, it will be stored in `out/`.
 
 **Note:** You can also run the code step by stem in the python notebook at [steps.ipynb](steps.ipynb)
 
+
+Bonus: Multithreading.  
+Data structuring runs on threads. However, the actual scraping process isn't threaded due to memory limitations on most devices.
+But this is proof of concept that my solution could be modified and scaled for a much bigger input file.
+
 ## Methodology
 1. Analysis of required data.
 2. Building a basic pipeline for scraping.
