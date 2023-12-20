@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from collections import deque
 import logging
 from threading import Thread
+import re
 
 selectors = {
     "Container": "[data-testid='primaryColumn']",
@@ -119,11 +120,29 @@ def structure_twitter_data(information: deque, links, data: [TwitterUser]):
         i = information.popleft()
         link = links.pop(0)
 
+        # bs4 handles from this point since we don't need resource heavy selenium anymore
         soup = BeautifulSoup(i, "html.parser")
         bio = soup.select_one(selectors["Bio"])
 
+        # since following and follower count both have the same CSS selector,
+        # we'll get an array with 2 elements in it
         following_followers = soup.select(selectors["FollowingFollowers"])
+        # substitution of K, M, L (lakh), etc. is required here
+        for i in len(following_followers):
+            following_followers[i] = re.sub(
+                r"(k|l|m)$",
+                lambda m: {
+                    "k": "000",
+                    "l": "00000",
+                    "m": "000000",
+                }[m.group(1).lower()],
+                following_followers[i],
+                re.I,
+            )
+            following_followers[i] = float(following_followers[i])
+
         following = following_followers[0]
+
         followers = following_followers[1]
 
         location = soup.select_one(selectors["Location"])

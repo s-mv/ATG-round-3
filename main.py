@@ -31,3 +31,5 @@ with open(output_path, "w", newline="") as file:
                 user.website,
             ]
         )
+
+print(f"CSV saved at: {output_path}")
