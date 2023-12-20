@@ -32,4 +32,4 @@ with open(output_path, "w", newline="") as file:
             ]
         )
 
-print("CSV saved at: {output_path}")
+print(f"CSV saved at: {output_path}")
