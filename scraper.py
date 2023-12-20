@@ -35,6 +35,16 @@ class TwitterUser:
         self.website = website
 
 
+""" 
+Flow of operations:
+1. Initialise the webdriver  
+2. Scrape raw data from the given links with `scrape_raw_twitter_data` (threaded)
+4. Free driver
+3. Get needed information from data     with `structure_twitter_data`
+5. Stop
+"""
+
+
 def scrape_twitter(links: [str], log: bool = True, num_procs: int = 2) -> [TwitterUser]:
     manager = Manager()
     information_queues = [manager.Queue() for _ in range(num_procs)]
