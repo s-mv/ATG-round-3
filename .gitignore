@@ -2,5 +2,5 @@ __pycache__
 venv
 
 test.html
-out/*
-!out/sample_output.csv
+# out is no longer required
+out

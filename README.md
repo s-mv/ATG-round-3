@@ -1,20 +1,19 @@
-# ATG-round-2
+# ATG-round-3
 
 ## Task information:
-- Download the CSV file from the link- https://drive.google.com/file/d/1PLYwrGn5YApyWU2QpjbdhM6tea0HuGq7/view?usp=sharing
-- Scrape the Twitter profile with Python Selenium or Beautiful Soup
-- Details needed are - Bio, Following Count, Followers Count, Location, Website(If available)
-- The program should create a CSV file with the above columns.
-- The code should be well commented and optimized, there will be extra marks for that
+- It will be a continuation of your Second task.
+- Refer to the second shortlisting task, instead of CSV store those scraped data in a MySQL or PostgreSQL Database.
+- Here is a video of how to use MySQL with Python:  https://www.youtube.com/watch?v=3vsC05rxZ8c
 - Make a short video explaining and running the task in <10mins. Don't need to show long-running codes.
 - Upload your code to a GitHub public repository
 - Submit the video and the GitHub link for the same in the submission form
 
 ## Setup
-Simply install the required libraries.
+1. Set up a user and stuff.
+2. Simply install the required libraries.  
 ```bash
 pip install -r requirements.txt
-```
+```  
 Maintaining a virtual environment is recommended.
 
 ## Running The Code
