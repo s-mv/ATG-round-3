@@ -21,12 +21,10 @@ To run the code simply run the following.
 ```bash
 python main.py
 ```
-Once the output is ready, it will be stored in `out/`.
+Once the output is ready, it will be stored in a database called `twitterbase` in table `users`.
+You can use [list.py](list.py) to list the entries.
 
-**Note**: You can also run the code step by stem in the python notebook at [steps.ipynb](steps.ipynb)
-
-
-**Bonus**: Multiprocessing.  
+**Bonus**: Multiprocessing. Even with MySQL!
 Scraping runs on multiple processes. This creates a much more scalable result.
 
 ## Methodology

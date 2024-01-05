@@ -1,9 +1,7 @@
-import mysql.connector
-from pathlib import Path
+from mysql.connector import pooling
 from user import TwitterUser
 
-conn = None
-cursor = None
+pool = None # pool of connections
 
 # SQL code for initialization
 CONNECT_SQL = """
@@ -24,16 +22,20 @@ VALUES (%s, %s, %s, %s, %s, %s);
 """
 
 
-def connect(user, host, password):
-    global conn, cursor
+def connect(user, host, password, size=32):
+    global pool
 
-    conn = mysql.connector.connect(
+    # creates a connection pool (for multiprocessing)
+    pool = pooling.MySQLConnectionPool(
         user=user,
         host=host,
+        pool_name="twitterbase_pool",
+        pool_size=size,
         password=password,
         database="twitterbase",
-        interactivity_timeout=1000,
     )
+
+    conn = pool.get_connection()
 
     cursor = conn.cursor()
     cursor.execute(CONNECT_SQL)
@@ -43,16 +45,22 @@ def connect(user, host, password):
 
 # if user exists, why bother scraping again?
 def user_exists(link) -> bool:
-    global cursor
+    global pool
 
-    query = "SELECT COUNT(*) FROM twitter_users WHERE link = %s"
+    conn = pool.get_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT COUNT(*) FROM users WHERE link = %s"
     cursor.execute(query, (link,))
     result = cursor.fetchone()
     return result[0] > 0
 
 
 def store(user: TwitterUser):
-    global cursor, conn
+    global pool
+
+    conn = pool.get_connection()
+    cursor = conn.cursor()
 
     data = (
         user.link,
@@ -66,10 +74,3 @@ def store(user: TwitterUser):
     cursor.execute(STORE_SQL, data)
 
     conn.commit()
-
-
-def close():
-    global cursor, conn
-
-    cursor.close()
-    conn.close()

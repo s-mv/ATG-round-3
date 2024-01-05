@@ -117,8 +117,9 @@ def scrape_raw_twitter_data(links: Queue, information: Queue, lock: Lock):
         if link is None:
             break  # exit condition
 
-        if user_exists(link):
-            continue
+        with lock:
+            if user_exists(link):
+                continue
 
         logging.info(f"processing {link}")
         driver.get(link)
