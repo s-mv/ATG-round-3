@@ -9,6 +9,9 @@ import logging
 from multiprocessing import Process, Manager, Queue, Lock
 import re
 
+from db import user_exists
+from user import TwitterUser
+
 selectors = {
     "Container": "[data-testid='primaryColumn']",
     "Bio": "[data-testid='UserDescription']",
@@ -16,24 +19,6 @@ selectors = {
     "Location": "[data-testid='UserLocation']",
     "Website": "[data-testid='UserUrl']",
 }
-
-
-class TwitterUser:
-    link: str  # for reference
-    bio: str
-    following: int
-    followers: int
-    location: str
-    website: str
-
-    def __init__(self, link, bio, following, followers, location, website):
-        self.link = link
-        self.bio = bio
-        self.following = following
-        self.followers = followers
-        self.location = location
-        self.website = website
-
 
 """ 
 Flow of operations:
@@ -131,6 +116,9 @@ def scrape_raw_twitter_data(links: Queue, information: Queue, lock: Lock):
             link = links.get()
         if link is None:
             break  # exit condition
+
+        if user_exists(link):
+            continue
 
         logging.info(f"processing {link}")
         driver.get(link)

@@ -9,7 +9,7 @@
 - Submit the video and the GitHub link for the same in the submission form
 
 ## Setup
-1. Set up a user and stuff.
+1. Set up `config.ini` as per requirements for the MySQL database.
 2. Simply install the required libraries.  
 ```bash
 pip install -r requirements.txt
