@@ -19,6 +19,7 @@ db.connect(
     user=config.get("DatabaseCredentials", "user"),
     host=config.get("DatabaseCredentials", "host"),
     password=config.get("DatabaseCredentials", "password"),
+    database=config.get("DatabaseCredentials", "database"),
 )
 
 users = scraper.scrape_twitter(links)
