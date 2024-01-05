@@ -8,7 +8,7 @@ conn = mysql.connector.connect(
     user=config.get("DatabaseCredentials", "user"),
     host=config.get("DatabaseCredentials", "host"),
     password=config.get("DatabaseCredentials", "password"),
-    database="twitterbase",
+    database=config.get("DatabaseCredentials", "database"),
 )
 
 cursor = conn.cursor()

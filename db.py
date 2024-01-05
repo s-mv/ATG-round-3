@@ -22,7 +22,7 @@ VALUES (%s, %s, %s, %s, %s, %s);
 """
 
 
-def connect(user, host, password, size=32):
+def connect(user, host, password, database, size=32):
     global pool
 
     # creates a connection pool (for multiprocessing)
@@ -32,7 +32,7 @@ def connect(user, host, password, size=32):
         pool_name="twitterbase_pool",
         pool_size=size,
         password=password,
-        database="twitterbase",
+        database=database,
     )
 
     conn = pool.get_connection()
