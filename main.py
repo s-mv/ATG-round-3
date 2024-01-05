@@ -26,5 +26,3 @@ users = scraper.scrape_twitter(links)
 
 for user in users:
     db.store(user)
-
-db.close()
